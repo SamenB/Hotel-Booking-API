@@ -1,90 +1,86 @@
-from fastapi import Body, Query, APIRouter, Depends
+from fastapi.exceptions import HTTPException  # noqa: F401
+from fastapi import Query, APIRouter, Body
 from src.schemas.hotels import Hotel, HotelPatch
 from src.api.dependencies import PaginationDep
+from src.database import new_session
+from src.repositories.hotels import HotelsRepository
+
 
 router = APIRouter(prefix="/hotels", tags=["Hotels"])
 
 
-hotels = [
-    {
-        "id": 1,
-        "name": "Hotel 1",
-        "description": "Hotel 1 description",
-        "price": 100,
-    },
-    {
-        "id": 2,
-        "name": "Hotel 2",
-        "description": "Hotel 2 description",
-        "price": 200,
-    }
-]
+@router.get("/{hotel_id}")
+async def get_hotel_by_id(hotel_id: int):
+    async with new_session() as session:
+        hotel = await HotelsRepository(session).get_one_or_none(id=hotel_id)
+        if not hotel:
+            raise HTTPException(status_code=404, detail="Hotel not found")
+        return hotel
+
 
 @router.get("")
-def get_hotels(
-                pagination: PaginationDep,
-                id:       int | None = Query(None, description="ID of the hotel"), # None -defoult, ... - required  
-                name:     str | None = Query(None, description="Name of the hotel")
-    ):
-    looking_for_hotel = []
-    for hotel in hotels:
-        id_match = (id is None) or hotel["id"] == id
-        name_match = (name is None) or hotel["name"] == name
-        if id_match and name_match:
-            looking_for_hotel.append(hotel)
-    if pagination.page and pagination.per_page:
-        return looking_for_hotel[(pagination.page-1)*pagination.per_page:][:pagination.per_page]
-    else:
-        return looking_for_hotel
-
+async def get_hotels(
+    pagination: PaginationDep,
+    title: str | None = Query(None, description="Title of the hotel"),
+    location: str | None = Query(None, description="Location of the hotel"),
+):
+    per_page = pagination.per_page or 10
+    async with new_session() as session:
+        hotels = await HotelsRepository(session).get_all(
+            title=title,
+            location=location,
+            limit=per_page,
+            offset=(pagination.page - 1) * per_page,
+        )
+        return hotels
 
 
 @router.post("")
-def create_hotel(
-    hotel_data: Hotel = Body(openapi_examples={
-        "1": {"summary": "Hotel 3", "value": {"name": "Hotel 3", "description": "Hotel 3 description", "price": 1000}}, 
-        "2": {"summary": "Hotel 4", "value": {"name": "Hotel 4", "description": "Hotel 4 description", "price": 2000}}
-    })
+async def create_hotel(
+    hotel_data: Hotel | list[Hotel] = Body(
+        openapi_examples={
+            "1": {
+                "summary": "Hotel 3",
+                "value": {"title": "Hotel 3", "location": "Hotel 3 description"},
+            },
+            "2": {
+                "summary": "Hotel 4",
+                "value": {"title": "Hotel 4", "location": "Hotel 4 description"},
+            },
+        }
+    ),
 ):
-    hotel_id = len(hotels) + 1
-    hotel = {"id": hotel_id, "name": hotel_data.name, "description": hotel_data.description, "price": hotel_data.price}
-    hotels.append(hotel)
-    return hotel
+    async with new_session() as session:
+        await HotelsRepository(session).add(hotel_data)
+        await session.commit()
+        return {"status": "OK"}
 
 
 @router.put("/{hotel_id}")
-def update_hotel(hotel_id: int, hotel_data: Hotel):
-    for hotel in hotels:
-        if hotel_id == hotel["id"]:
-            hotel["name"] = hotel_data.name
-            hotel["description"] = hotel_data.description
-            hotel["price"] = hotel_data.price
-            return hotel
-    return {"message": "Hotel not found"}
+async def update_hotel(hotel_id: int, hotel_data: Hotel):
+    async with new_session() as session:
+        await HotelsRepository(session).edit(hotel_data, id=hotel_id)
+        await session.commit()
+        return {"status": "OK"}
 
 
 @router.patch(
     "/{hotel_id}",
-    summary="Update hotel partially", 
-    description="Update any fields that are provided"
+    summary="Update hotel partially",
+    description="Update any fields that are provided",
 )
-def update_hotel_partially(hotel_id: int, hotel_data: HotelPatch):
-    for hotel in hotels:
-        if hotel_id == hotel["id"]:
-            if hotel_data.name:
-                hotel["name"] = hotel_data.name
-            if hotel_data.description:
-                hotel["description"] = hotel_data.description
-            if hotel_data.price:
-                hotel["price"] = hotel_data.price
-            return hotel
-    return {"message": "Hotel not found"}
+async def update_hotel_partially(hotel_id: int, hotel_data: HotelPatch):
+    async with new_session() as session:
+        await HotelsRepository(session).edit(
+            hotel_data, exclude_unset=True, id=hotel_id
+        )
+        await session.commit()
+        return {"status": "OK"}
 
 
 @router.delete("/{hotel_id}")
-def delete_hotel(hotel_id: int):
-    for hotel in hotels:
-        if hotel_id == hotel["id"]:
-            hotels.remove(hotel)
-            return {"message": "Hotel deleted successfully"}
-    return {"message": "Hotel not found"}
+async def delete_hotel(hotel_id: int):
+    async with new_session() as session:
+        await HotelsRepository(session).delete(id=hotel_id)
+        await session.commit()
+        return {"status": "OK"}

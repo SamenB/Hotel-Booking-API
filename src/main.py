@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Body, Query
+from fastapi import FastAPI
 import uvicorn
 from src.api.hotels import router as router_hotels
 
