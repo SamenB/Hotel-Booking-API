@@ -8,17 +8,19 @@ from alembic import context
 
 import sys
 from pathlib import Path
+
 # Add project root to sys.path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from src.database import Base
 from src.models.hotels import HotelsOrm
 from src.models.rooms import RoomsORM
+from src.models.users import UsersOrm
 from src.config import settings
 
 
 # alembic revision --autogenerate -m "message"
-# alembic upgrade head 
+# alembic upgrade head
 # alembic downgrade 01720105d3df
 
 # this is the Alembic Config object, which provides
@@ -79,9 +81,7 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()

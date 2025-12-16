@@ -9,6 +9,7 @@ class BaseRepository:
     """
 
     model = None
+    schema: BaseModel = None
 
     def __init__(self, session):
         self.session = session
@@ -16,12 +17,20 @@ class BaseRepository:
     async def get_all(self):
         query = select(self.model)
         result = await self.session.execute(query)
-        return result.scalars().all()
+        return [
+            self.schema.model_validate(model, from_attributes=True)
+            for model in result.scalars().all()
+        ]
 
     async def get_one_or_none(self, **filter_by):
         query = select(self.model).filter_by(**filter_by)
         result = await self.session.execute(query)
-        return result.scalar_one_or_none()
+        if result.scalar_one_or_none() is None:
+            raise HTTPException(status_code=404, detail="hotel not found")
+            return None
+        return self.schema.model_validate(
+            result.scalar_one_or_none(), from_attributes=True
+        )
 
     async def add(self, data: BaseModel | list[BaseModel]):
         if isinstance(data, list):
@@ -33,9 +42,14 @@ class BaseRepository:
         #                                   compile_kwargs={"literal_binds": True})
         # print(raw_sql)
         result = await self.session.execute(add_stmt)
-        return result.scalars().all()
+        return [
+            self.schema.model_validate(model, from_attributes=True)
+            for model in result.scalars().all()
+        ]
 
-    async def edit(self, data: BaseModel, exclude_unset: bool = False, **filter_by):
+    async def edit(
+        self, data: BaseModel, exclude_unset: bool = False, **filter_by
+    ) -> None:
         edit_stmt = (
             update(self.model)
             .filter_by(**filter_by)
@@ -44,11 +58,11 @@ class BaseRepository:
         result = await self.session.execute(edit_stmt)
         if result.rowcount == 0:
             raise HTTPException(status_code=404, detail="hotel not found")
-        return result
+        return None
 
-    async def delete(self, **filter_by):
+    async def delete(self, **filter_by) -> None:
         delete_stmt = delete(self.model).filter_by(**filter_by)
         result = await self.session.execute(delete_stmt)
         if result.rowcount == 0:
             raise HTTPException(status_code=404, detail="hotel not found")
-        return result
+        return None
