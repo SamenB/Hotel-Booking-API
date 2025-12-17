@@ -1,4 +1,3 @@
-from fastapi.exceptions import HTTPException
 from sqlalchemy import select, insert, update, delete
 from pydantic import BaseModel
 
