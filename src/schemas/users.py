@@ -15,6 +15,7 @@ class UserAdd(BaseModel):
 
 class User(UserAdd):
     id: int = Field(..., description="ID of the user")
+    hashed_password: str = Field(exclude=True)
 
 
 class UserLogin(BaseModel):

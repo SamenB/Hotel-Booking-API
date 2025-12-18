@@ -1,3 +1,4 @@
+from fastapi.exceptions import HTTPException
 from pwdlib import PasswordHash
 from datetime import datetime, timedelta, timezone
 import jwt
@@ -18,6 +19,17 @@ class AuthService:
             to_encode, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM
         )
         return encoded_jwt
+
+    def decode_access_token(self, token: str) -> dict:
+        try:
+            payload = jwt.decode(
+                token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
+            )
+            return payload
+        except jwt.ExpiredSignatureError:
+            raise HTTPException(status_code=401, detail="Token expired")
+        except jwt.InvalidTokenError:
+            raise HTTPException(status_code=401, detail="Invalid token")
 
     def hash_password(self, password: str) -> str:
         return self.password_hash.hash(password)
