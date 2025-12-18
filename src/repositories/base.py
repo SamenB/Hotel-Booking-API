@@ -13,8 +13,19 @@ class BaseRepository:
     def __init__(self, session):
         self.session = session
 
+    async def get_filtered(self, **filter_by):
+        query = select(self.model).filter_by(**filter_by)
+        result = await self.session.execute(query)
+        return [
+            self.schema.model_validate(model, from_attributes=True)
+            for model in result.scalars().all()
+        ]
+
     async def get_all(self, *args, **kwargs):
-        query = select(self.model)
+        return await self.get_filtered(**kwargs)
+
+    async def get_paginated(self, limit: int, offset: int):
+        query = select(self.model).limit(limit).offset(offset)
         result = await self.session.execute(query)
         return [
             self.schema.model_validate(model, from_attributes=True)
