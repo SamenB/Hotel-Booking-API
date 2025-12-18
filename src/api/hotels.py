@@ -1,6 +1,6 @@
 from fastapi.exceptions import HTTPException  # noqa: F401
 from fastapi import Query, APIRouter, Body
-from src.schemas.hotels import Hotel, HotelPatch
+from src.schemas.hotels import HotelAdd, HotelPatch
 from src.api.dependencies import PaginationDep
 from src.database import new_session
 from src.repositories.hotels import HotelsRepository
@@ -37,7 +37,7 @@ async def get_hotels(
 
 @router.post("")
 async def create_hotel(
-    hotel_data: Hotel | list[Hotel] = Body(
+    hotel_data: HotelAdd | list[HotelAdd] = Body(
         openapi_examples={
             "1": {
                 "summary": "Hotel 3",
@@ -57,7 +57,7 @@ async def create_hotel(
 
 
 @router.put("/{hotel_id}")
-async def update_hotel(hotel_id: int, hotel_data: Hotel):
+async def update_hotel(hotel_id: int, hotel_data: HotelAdd):
     async with new_session() as session:
         await HotelsRepository(session).edit(hotel_data, id=hotel_id)
         await session.commit()
