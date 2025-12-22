@@ -1,35 +1,37 @@
+from datetime import date
 from fastapi.exceptions import HTTPException  # noqa: F401
-from fastapi import Query, APIRouter, Body
-from src.schemas.rooms import RoomAddRequest, RoomAdd
-from src.api.dependencies import PaginationDep
-from src.database import new_session
-from src.repositories.rooms import RoomsRepository
-from src.repositories.hotels import HotelsRepository
-
+from fastapi import APIRouter, Body, Query
+from src.schemas.rooms import RoomAddRequest, RoomAdd, RoomAddBulk
+from src.api.dependencies import DBDep
 
 router = APIRouter(prefix="/hotels/{hotel_id}/rooms", tags=["Rooms"])
+bulk_router = APIRouter(prefix="/rooms", tags=["Rooms"])
 
 
 @router.get("/{room_id}")
-async def get_room_by_id(hotel_id: int, room_id: int):
-    async with new_session() as session:
-        room = await RoomsRepository(session).get_one_or_none(
-            id=room_id, hotel_id=hotel_id
-        )
-        if not room:
-            raise HTTPException(status_code=404, detail="Room not found")
-        return room
+async def get_room_by_id(db: DBDep, hotel_id: int, room_id: int):
+    room = await db.rooms.get_one_or_none(id=room_id, hotel_id=hotel_id)
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+    return room
 
 
 @router.get("")
-async def get_all_rooms(hotel_id: int):
-    async with new_session() as session:
-        rooms = await RoomsRepository(session).get_all(hotel_id=hotel_id)
-        return rooms
+async def get_all_rooms(
+    db: DBDep,
+    hotel_id: int,
+    date_from: date = Query(example={"1": "2025-01-01"}),
+    date_to: date = Query(example={"1": "2025-01-05"}),
+):
+    rooms = await db.rooms.get_filtered_by_time(
+        hotel_id=hotel_id, date_from=date_from, date_to=date_to
+    )
+    return rooms
 
 
 @router.post("")
 async def create_room(
+    db: DBDep,
     hotel_id: int,
     room_data: RoomAddRequest = Body(
         openapi_examples={
@@ -54,28 +56,26 @@ async def create_room(
         }
     ),
 ):
-    async with new_session() as session:
-        hotel = await HotelsRepository(session).get_one_or_none(id=hotel_id)
-        if not hotel:
-            raise HTTPException(status_code=404, detail="Hotel not found")
-        room = await RoomsRepository(session).add(
-            RoomAdd(**room_data.model_dump(), hotel_id=hotel_id)
-        )
-        await session.commit()
-        return {"status": "OK", "data": room}
+    hotel = await db.hotels.get_one_or_none(id=hotel_id)
+    if not hotel:
+        raise HTTPException(status_code=404, detail="Hotel not found")
+    room = await db.rooms.add(RoomAdd(**room_data.model_dump(), hotel_id=hotel_id))
+    await db.commit()
+    return {"status": "OK", "data": room}
 
 
 @router.put("/{room_id}")
-async def update_room(hotel_id: int, room_id: int, room_data: RoomAddRequest):
-    async with new_session() as session:
-        room = await RoomsRepository(session).get_one_or_none(id=room_id)
-        if not room:
-            raise HTTPException(status_code=404, detail="Room not found")
-        await RoomsRepository(session).edit(
-            RoomAdd(**room_data.model_dump(), hotel_id=hotel_id), id=room_id
-        )
-        await session.commit()
-        return {"status": "OK"}
+async def update_room(
+    db: DBDep, hotel_id: int, room_id: int, room_data: RoomAddRequest
+):
+    room = await db.rooms.get_one_or_none(id=room_id)
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+    await db.rooms.edit(
+        RoomAdd(**room_data.model_dump(), hotel_id=hotel_id), id=room_id
+    )
+    await db.commit()
+    return {"status": "OK"}
 
 
 @router.patch(
@@ -83,19 +83,44 @@ async def update_room(hotel_id: int, room_id: int, room_data: RoomAddRequest):
     summary="Update room partially",
     description="Update any fields that are provided",
 )
-async def update_room_partially(room_id: int, room_data: RoomAddRequest):
-    async with new_session() as session:
-        room = await RoomsRepository(session).get_one_or_none(id=room_id)
-        if not room:
-            raise HTTPException(status_code=404, detail="Room not found")
-        await RoomsRepository(session).edit(room_data, exclude_unset=True, id=room_id)
-        await session.commit()
-        return {"status": "OK"}
+async def update_room_partially(db: DBDep, room_id: int, room_data: RoomAddRequest):
+    room = await db.rooms.get_one_or_none(id=room_id)
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+    await db.rooms.edit(room_data, exclude_unset=True, id=room_id)
+    await db.commit()
+    return {"status": "OK"}
 
 
 @router.delete("/{room_id}")
-async def delete_room(room_id: int):
-    async with new_session() as session:
-        await RoomsRepository(session).delete(id=room_id)
-        await session.commit()
-        return {"status": "OK"}
+async def delete_room(db: DBDep, room_id: int):
+    room = await db.rooms.get_one_or_none(id=room_id)
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+    await db.rooms.delete(id=room_id)
+    await db.commit()
+    return {"status": "OK"}
+
+
+@bulk_router.post("/bulk")
+async def create_rooms_bulk(db: DBDep, rooms_data: list[RoomAddBulk]):
+    """
+    Create multiple rooms at once (bulk insert).
+    hotel_id is passed in body for each room.
+    """
+    # Проверяем что все hotel_id существуют
+    hotel_ids = set(room.hotel_id for room in rooms_data)
+    for hotel_id in hotel_ids:
+        hotel = await db.hotels.get_one_or_none(id=hotel_id)
+        if not hotel:
+            raise HTTPException(
+                status_code=404, detail=f"Hotel with id={hotel_id} not found"
+            )
+
+    # Конвертируем в RoomAdd (схема та же, просто для ясности)
+    rooms_to_add = [RoomAdd(**room.model_dump()) for room in rooms_data]
+
+    await db.rooms.add_bulk(rooms_to_add)
+    await db.commit()
+
+    return {"status": "OK", "created": len(rooms_to_add)}

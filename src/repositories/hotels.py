@@ -1,7 +1,10 @@
 from src.repositories.base import BaseRepository
 from src.models.hotels import HotelsOrm
+from src.models.rooms import RoomsORM
 from sqlalchemy import select
 from src.schemas.hotels import Hotel
+from src.repositories.utils import room_ids_for_booking
+from datetime import date
 
 
 class HotelsRepository(BaseRepository):
@@ -26,3 +29,27 @@ class HotelsRepository(BaseRepository):
             self.schema.model_validate(model, from_attributes=True)
             for model in result.scalars().all()
         ]
+
+    async def get_filtered_by_time(
+        self,
+        date_from: date,
+        date_to: date,
+        available: bool = True,
+        limit: int = 10,
+        offset: int = 0,
+    ):
+        rooms_ids_to_get = room_ids_for_booking(date_from, date_to)
+        hotels_ids_with_rooms = select(RoomsORM.hotel_id)
+        if available:
+            hotels_ids_with_rooms = hotels_ids_with_rooms.where(
+                RoomsORM.id.in_(rooms_ids_to_get)
+            )
+        else:
+            hotels_ids_with_rooms = hotels_ids_with_rooms.where(
+                RoomsORM.id.notin_(rooms_ids_to_get)
+            )
+        hotels_ids_with_rooms = hotels_ids_with_rooms.cte("hotels_ids_with_rooms")
+        hotels = await self.get_filtered(
+            HotelsOrm.id.in_(hotels_ids_with_rooms), limit=limit, offset=offset
+        )
+        return hotels
