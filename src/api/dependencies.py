@@ -4,12 +4,14 @@ from typing import Annotated
 from fastapi import Request
 from src.services.auth import AuthService
 from fastapi import HTTPException
+from src.utils.db_manager import DBManager
+from src.database import new_session
 
 
 class PaginationParams(BaseModel):
     page: Annotated[int, Query(1, ge=1, description="Page number")]
     per_page: Annotated[
-        int | None, Query(None, ge=1, lt=100, description="Number of hotels per page")
+        int | None, Query(None, ge=1, lt=500, description="Number of hotels per page")
     ]
 
 
@@ -29,3 +31,11 @@ def get_current_user_id(token: str = Depends(get_token)):
 
 
 UserDep = Annotated[int, Depends(get_current_user_id)]
+
+
+async def get_db():
+    async with DBManager(session_factory=new_session) as db:
+        yield db
+
+
+DBDep = Annotated[DBManager, Depends(get_db)]

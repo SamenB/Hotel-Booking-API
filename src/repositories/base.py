@@ -13,8 +13,11 @@ class BaseRepository:
     def __init__(self, session):
         self.session = session
 
-    async def get_filtered(self, **filter_by):
-        query = select(self.model).filter_by(**filter_by)
+    async def get_filtered(
+        self, *filter, limit: int = 10, offset: int = 0, **filter_by
+    ):
+        query = select(self.model).filter(*filter).filter_by(**filter_by)
+        query = query.limit(limit).offset(offset)
         result = await self.session.execute(query)
         return [
             self.schema.model_validate(model, from_attributes=True)
@@ -23,14 +26,6 @@ class BaseRepository:
 
     async def get_all(self, *args, **kwargs):
         return await self.get_filtered(**kwargs)
-
-    async def get_paginated(self, limit: int, offset: int):
-        query = select(self.model).limit(limit).offset(offset)
-        result = await self.session.execute(query)
-        return [
-            self.schema.model_validate(model, from_attributes=True)
-            for model in result.scalars().all()
-        ]
 
     async def get_one_or_none(self, **filter_by):
         query = select(self.model).filter_by(**filter_by)
@@ -63,3 +58,12 @@ class BaseRepository:
     async def delete(self, **filter_by) -> None:
         delete_stmt = delete(self.model).filter_by(**filter_by)
         await self.session.execute(delete_stmt)
+
+    async def add_bulk(self, data: list[BaseModel]) -> None:
+        """
+        Bulk insert multiple records in a single SQL statement.
+        More efficient than inserting one by one.
+        """
+        data_to_insert = [item.model_dump() for item in data]
+        add_stmt = insert(self.model).values(data_to_insert)
+        await self.session.execute(add_stmt)

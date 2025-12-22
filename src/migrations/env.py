@@ -16,6 +16,7 @@ from src.database import Base
 from src.models.hotels import HotelsOrm
 from src.models.rooms import RoomsORM
 from src.models.users import UsersOrm
+from src.models.bookings import BookingOrm
 from src.config import settings
 
 
