@@ -2,14 +2,14 @@ from src.repositories.base import BaseRepository
 from src.models.hotels import HotelsOrm
 from src.models.rooms import RoomsOrm
 from sqlalchemy import select
-from src.schemas.hotels import Hotel
+from src.repositories.mappers.mappers import HotelMapper
 from src.repositories.utils import room_ids_for_booking
 from datetime import date
 
 
 class HotelsRepository(BaseRepository):
     model = HotelsOrm
-    schema = Hotel
+    mapper = HotelMapper
 
     async def get_all(
         self,
@@ -26,7 +26,7 @@ class HotelsRepository(BaseRepository):
         query = query.limit(limit).offset(offset)
         result = await self.session.execute(query)
         return [
-            self.schema.model_validate(model, from_attributes=True)
+            self.mapper.map_to_schema(model)
             for model in result.scalars().all()
         ]
 
