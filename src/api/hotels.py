@@ -23,9 +23,9 @@ async def get_hotels(
     pagination: PaginationDep,
     date_from: date = Query(example="2025-01-01"),
     date_to: date = Query(example="2025-01-05"),
-    available: bool = Query(
-        True, description="Get only hotels with available rooms or without rooms"
-    ),
+    available: bool = Query(True, description="Hotels with available rooms or without"),
+    title: str | None = Query(None, description="Hotel title"),
+    location: str | None = Query(None, description="Hotel location"),
 ):
     per_page = pagination.per_page or 10
     offset = (pagination.page - 1) * per_page
@@ -33,6 +33,8 @@ async def get_hotels(
         date_from=date_from,
         date_to=date_to,
         available=available,
+        title=title,
+        location=location,
         limit=per_page,
         offset=offset,
     )

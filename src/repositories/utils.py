@@ -1,4 +1,4 @@
-from src.models.rooms import RoomsORM
+from src.models.rooms import RoomsOrm
 from src.models.bookings import BookingsOrm
 from sqlalchemy import select, func
 from datetime import date
@@ -17,20 +17,20 @@ def room_ids_for_booking(date_from: date, date_to: date, hotel_id: int | None = 
 
     # CTE 2: available_rooms - calculate available room quantity
     rooms_available = (
-        RoomsORM.quantity - func.coalesce(rooms_count.c.rooms_booked, 0)
+        RoomsOrm.quantity - func.coalesce(rooms_count.c.rooms_booked, 0)
     ).label("rooms_available")
     available_rooms = (
-        select(RoomsORM.id.label("room_id"), rooms_available)
-        .select_from(RoomsORM)
-        .outerjoin(rooms_count, RoomsORM.id == rooms_count.c.room_id)
+        select(RoomsOrm.id.label("room_id"), rooms_available)
+        .select_from(RoomsOrm)
+        .outerjoin(rooms_count, RoomsOrm.id == rooms_count.c.room_id)
         .cte("available_rooms")
     )
 
     # Final query: select rooms with rooms_available > 0 and add filter by hotel_id
-    rooms_ids_for_hotel = select(RoomsORM.id)
+    rooms_ids_for_hotel = select(RoomsOrm.id)
     if hotel_id:
-        rooms_ids_for_hotel = rooms_ids_for_hotel.where(RoomsORM.hotel_id == hotel_id)
-    rooms_ids_for_hotel = rooms_ids_for_hotel.subquery()
+        rooms_ids_for_hotel = rooms_ids_for_hotel.where(RoomsOrm.hotel_id == hotel_id)
+    # rooms_ids_for_hotel = rooms_ids_for_hotel.subquery()
 
     rooms_ids_to_get = (
         select(available_rooms.c.room_id)
