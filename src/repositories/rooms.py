@@ -1,15 +1,16 @@
 from datetime import date
 from src.repositories.base import BaseRepository
 from src.models.rooms import RoomsOrm
-from src.schemas.rooms import Room, RoomWithFacilities
 from src.repositories.utils import room_ids_for_booking
 from sqlalchemy.orm import selectinload, joinedload
 from sqlalchemy import select
+from src.repositories.mappers.mappers import RoomMapper
+from src.schemas.rooms import RoomWithFacilities
 
 
 class RoomsRepository(BaseRepository):
     model = RoomsOrm
-    schema = Room
+    mapper = RoomMapper
     """
     with rooms_count as (
         select room_id, count(*) as rooms_booked from bookings 

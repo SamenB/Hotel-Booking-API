@@ -1,5 +1,6 @@
 from sqlalchemy import select, insert, update, delete
 from pydantic import BaseModel
+from src.repositories.mappers.base import DataMapper
 
 
 class BaseRepository:
@@ -8,7 +9,7 @@ class BaseRepository:
     """
 
     model = None
-    schema: BaseModel = None
+    mapper: DataMapper = None
 
     def __init__(self, session):
         self.session = session
@@ -20,7 +21,7 @@ class BaseRepository:
             .filter_by(**filter_by)
         )
         result = await self.session.execute(query)
-        return [self.schema.model_validate(model) for model in result.scalars().all()]
+        return [self.mapper.map_to_schema(model) for model in result.scalars().all()]
 
     async def get_all(self, *args, **kwargs):
         return await self.get_filtered(**kwargs)
@@ -31,7 +32,7 @@ class BaseRepository:
         model = result.scalars().one_or_none()
         if model is None:
             return None
-        return self.schema.model_validate(model, from_attributes=True)
+        return self.mapper.map_to_schema(model)
 
     async def add(self, data: BaseModel | list[BaseModel]):
         if isinstance(data, list):
@@ -41,7 +42,7 @@ class BaseRepository:
         add_stmt = insert(self.model).values(data_to_insert).returning(self.model)
         result = await self.session.execute(add_stmt)
         model = result.scalars().one()
-        return self.schema.model_validate(model, from_attributes=True)
+        return self.mapper.map_to_schema(model)
 
     async def edit(
         self, data: BaseModel, exclude_unset: bool = False, **filter_by
