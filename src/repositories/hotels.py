@@ -1,6 +1,6 @@
 from src.repositories.base import BaseRepository
 from src.models.hotels import HotelsOrm
-from src.models.rooms import RoomsORM
+from src.models.rooms import RoomsOrm
 from sqlalchemy import select
 from src.schemas.hotels import Hotel
 from src.repositories.utils import room_ids_for_booking
@@ -37,19 +37,25 @@ class HotelsRepository(BaseRepository):
         available: bool = True,
         limit: int = 10,
         offset: int = 0,
+        title: str | None = None,
+        location: str | None = None,
     ):
         rooms_ids_to_get = room_ids_for_booking(date_from, date_to)
-        hotels_ids_with_rooms = select(RoomsORM.hotel_id)
+        hotels_ids_with_rooms = select(RoomsOrm.hotel_id)
         if available:
             hotels_ids_with_rooms = hotels_ids_with_rooms.where(
-                RoomsORM.id.in_(rooms_ids_to_get)
+                RoomsOrm.id.in_(rooms_ids_to_get)
             )
         else:
             hotels_ids_with_rooms = hotels_ids_with_rooms.where(
-                RoomsORM.id.notin_(rooms_ids_to_get)
+                RoomsOrm.id.notin_(rooms_ids_to_get)
             )
         hotels_ids_with_rooms = hotels_ids_with_rooms.cte("hotels_ids_with_rooms")
         hotels = await self.get_filtered(
-            HotelsOrm.id.in_(hotels_ids_with_rooms), limit=limit, offset=offset
+            HotelsOrm.id.in_(hotels_ids_with_rooms),
+            limit=limit,
+            offset=offset,
+            title=title,
+            location=location,
         )
         return hotels
