@@ -7,6 +7,8 @@ class Settings(BaseSettings):
     DB_PASS: str
     DB_HOST: str
     DB_PORT: int
+    REDIS_HOST: str
+    REDIS_PORT: int
 
     @property
     def DB_URL(self):
