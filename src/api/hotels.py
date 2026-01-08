@@ -1,9 +1,12 @@
 from fastapi.exceptions import HTTPException  # noqa: F401
 from fastapi import Query, APIRouter, Body
+from fastapi import UploadFile, File
+from datetime import date
+
 from src.schemas.hotels import HotelAdd, HotelPatch
 from src.api.dependencies import PaginationDep
 from src.api.dependencies import DBDep
-from datetime import date
+from src.services.images import ImageService
 
 
 router = APIRouter(prefix="/hotels", tags=["Hotels"])
@@ -85,3 +88,18 @@ async def delete_hotel(db: DBDep, hotel_id: int):
     await db.hotels.delete(id=hotel_id)
     await db.commit()
     return {"status": "OK"}
+
+
+@router.post("/{hotel_id}/images")
+async def upload_hotel_image(hotel_id: int, file: UploadFile = File(...)):
+    ImageService.save_and_process_hotel_image(hotel_id, file)
+    return {"status": "OK", "message": "Image processing started"}
+
+
+
+@router.get("/{hotel_id}/images")
+async def get_hotel_images(hotel_id: int, db: DBDep):
+    hotel = await db.hotels.get_one_or_none(id=hotel_id)
+    if not hotel:
+        raise HTTPException(status_code=404, detail="Hotel not found")
+    return {"images": hotel.images or []}
