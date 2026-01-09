@@ -1,16 +1,13 @@
 from fastapi import APIRouter, Body, Query
-from fastapi_cache.decorator import cache
-
 from src.schemas.facilities import FacilityAdd
 from src.api.dependencies import DBDep
-
-
+from fastapi_cache.decorator import cache
 
 router = APIRouter(prefix="/facilities", tags=["Facilities"])
 
 
 @router.get("")
-# @cache(expire=100)
+@cache(expire=10)
 async def get_all_facilities(db: DBDep):
     print("FROM DB")
     facilities = await db.facilities.get_all()

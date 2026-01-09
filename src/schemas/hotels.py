@@ -8,6 +8,7 @@ class HotelAdd(BaseModel):
 
 class Hotel(HotelAdd):
     id: int = Field(..., description="ID of the hotel")
+    images: list[str] | None = Field(None, description="List of image URLs")
 
 
 class HotelPatch(BaseModel):
