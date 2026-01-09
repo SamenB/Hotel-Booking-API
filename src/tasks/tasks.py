@@ -1,12 +1,15 @@
 # src/tasks/tasks.py
 from PIL import Image
 from pathlib import Path
-from src.tasks.celery_app import celery_instance
+import asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy import update
+
+from src.tasks.celery_app import celery_instance
 from src.models.hotels import HotelsOrm
 from src.config import settings
-import asyncio
+from src.utils.db_manager import DBManager
+from src.database import new_session_null_pool
 
 
 def run_async(coro):
@@ -27,36 +30,43 @@ def process_hotel_image(hotel_id: int, temp_file_path: str):
     
     try:
         with Image.open(file_path) as img:
-            # Save original version in WebP format
             original_name = f"{hotel_id}_original.webp"
             img.save(output_dir / original_name, format="WEBP")
             
-            # Create and save a thumbnail (400x400)
             img.thumbnail((400, 400))
             thumb_name = f"{hotel_id}_thumb.webp"
             img.save(output_dir / thumb_name, format="WEBP")
 
-        # Update the database with new image paths
         async def update_db():
-            engine = create_async_engine(settings.DB_URL)
-            async_session = async_sessionmaker(engine, expire_on_commit=False)
-            
-            async with async_session() as session:
-                image_urls = [
-                    f"/static/images/{original_name}", 
-                    f"/static/images/{thumb_name}"
-                ]
+            async with new_session_null_pool() as session: 
                 stmt = (
                     update(HotelsOrm)
                     .where(HotelsOrm.id == hotel_id)
-                    .values(images=image_urls)
+                    .values(images=[
+                        f"/static/images/{original_name}",
+                        f"/static/images/{thumb_name}"
+                    ])
                 )
                 await session.execute(stmt)
                 await session.commit()
-                
-            await engine.dispose()
         
         run_async(update_db())
     
     finally:
         file_path.unlink(missing_ok=True)
+
+
+
+async def send_emails_to_users_with_tooday_checkin_helper():
+    print("START HERE")
+    async with DBManager(session_factory=new_session_null_pool) as db:
+        bookings = await db.bookings.get_bookings_with_today_checkin()
+        print(f"Bookings: {bookings}")
+
+
+
+@celery_instance.task(name="booking_tooday_checkin")
+def send_emails_to_users_with_tooday_checkin():
+    run_async(send_emails_to_users_with_tooday_checkin_helper())
+
+    
