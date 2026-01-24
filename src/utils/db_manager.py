@@ -1,8 +1,13 @@
+import asyncio                            
+from sqlalchemy.exc import OperationalError  
+
 from src.repositories.hotels import HotelsRepository
 from src.repositories.rooms import RoomsRepository
 from src.repositories.users import UsersRepository
 from src.repositories.bookings import BookingsRepository
 from src.repositories.facilities import FacilitiesRepository, RoomFacilitiesRepository
+
+
 
 
 class DBManager:
@@ -25,4 +30,17 @@ class DBManager:
         await self.session.close()
 
     async def commit(self):
-        await self.session.commit()
+        '''
+            session commit with deadlock exception handling
+        '''
+        for attempt in range(3):
+            try:
+                await self.session.commit()
+                return
+            except OperationalError as e:
+                if "deadlock" in str(e).lower():
+                    await self.session.rollback()
+                    if attempt < 2:
+                        await asyncio.sleep(0.1 * (attempt + 1))
+                        continue
+                raise
