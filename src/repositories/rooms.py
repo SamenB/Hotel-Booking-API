@@ -48,4 +48,3 @@ class RoomsRepository(BaseRepository):
         if model is None:
             return None
         return RoomWithFacilities.model_validate(model, from_attributes=True)
-        

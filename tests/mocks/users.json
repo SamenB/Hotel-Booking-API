@@ -1,0 +1,56 @@
+[
+    {
+        "id": 1,
+        "username": "john_doe",
+        "email": "john@example.com",
+        "hashed_password": "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.V7C1vFMZdC2hXe"
+    },
+    {
+        "id": 2,
+        "username": "jane_smith",
+        "email": "jane@example.com",
+        "hashed_password": "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.V7C1vFMZdC2hXe"
+    },
+    {
+        "id": 3,
+        "username": "mike_tourist",
+        "email": "mike@example.com",
+        "hashed_password": "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.V7C1vFMZdC2hXe"
+    },
+    {
+        "id": 4,
+        "username": "anna_explorer",
+        "email": "anna@example.com",
+        "hashed_password": "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.V7C1vFMZdC2hXe"
+    },
+    {
+        "id": 5,
+        "username": "corp_david",
+        "email": "david@example.com",
+        "hashed_password": "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.V7C1vFMZdC2hXe"
+    },
+    {
+        "id": 6,
+        "username": "frequent_guest",
+        "email": "vip@example.com",
+        "hashed_password": "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.V7C1vFMZdC2hXe"
+    },
+    {
+        "id": 7,
+        "username": "new_user",
+        "email": "newuser@example.com",
+        "hashed_password": "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.V7C1vFMZdC2hXe"
+    },
+    {
+        "id": 8,
+        "username": "test_admin",
+        "email": "admin@example.com",
+        "hashed_password": "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.V7C1vFMZdC2hXe"
+    },
+    {
+        "id": 9,
+        "username": "qa_tester",
+        "email": "qa@example.com",
+        "hashed_password": "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.V7C1vFMZdC2hXe"
+    }
+]

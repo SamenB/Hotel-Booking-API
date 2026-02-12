@@ -3,8 +3,12 @@ from src.config import settings
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.pool import NullPool
 
+db_params = {}
+if settings.MODE == "TEST":
+    db_params["poolclass"] = NullPool
 
-engine = create_async_engine(settings.DB_URL, echo=False)
+
+engine = create_async_engine(settings.DB_URL, echo=False, **db_params)
 engine_null_pool = create_async_engine(settings.DB_URL, echo=False, poolclass=NullPool)
 
 

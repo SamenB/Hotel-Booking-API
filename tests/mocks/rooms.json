@@ -1,0 +1,146 @@
+[
+    {
+        "id": 1,
+        "hotel_id": 1,
+        "title": "Standard Room",
+        "description": "Comfortable room with city view.",
+        "price": 2500,
+        "quantity": 5
+    },
+    {
+        "id": 2,
+        "hotel_id": 1,
+        "title": "Presidential Suite",
+        "description": "Luxury suite with panoramic views.",
+        "price": 15000,
+        "quantity": 1
+    },
+    {
+        "id": 3,
+        "hotel_id": 2,
+        "title": "Business Single",
+        "description": "Efficient room with work desk.",
+        "price": 1800,
+        "quantity": 10
+    },
+    {
+        "id": 4,
+        "hotel_id": 2,
+        "title": "Executive Room",
+        "description": "Premium room with lounge access.",
+        "price": 4500,
+        "quantity": 3
+    },
+    {
+        "id": 5,
+        "hotel_id": 3,
+        "title": "Classic Room",
+        "description": null,
+        "price": 2200,
+        "quantity": 6
+    },
+    {
+        "id": 6,
+        "hotel_id": 3,
+        "title": "Heritage Suite",
+        "description": "Antique furniture and modern comfort.",
+        "price": 5000,
+        "quantity": 2
+    },
+    {
+        "id": 7,
+        "hotel_id": 4,
+        "title": "Sea View Room",
+        "description": "Beautiful Mediterranean-style room.",
+        "price": 3000,
+        "quantity": 15
+    },
+    {
+        "id": 8,
+        "hotel_id": 4,
+        "title": "Beach Villa",
+        "description": "Private villa with pool and beach access.",
+        "price": 20000,
+        "quantity": 2
+    },
+    {
+        "id": 9,
+        "hotel_id": 5,
+        "title": "Standard Room",
+        "description": "Classic room near Opera House.",
+        "price": 1900,
+        "quantity": 12
+    },
+    {
+        "id": 10,
+        "hotel_id": 5,
+        "title": "Opera View Suite",
+        "description": "Elegant suite with Opera House view.",
+        "price": 5500,
+        "quantity": 1
+    },
+    {
+        "id": 11,
+        "hotel_id": 6,
+        "title": "Cozy Single",
+        "description": "Charming room in medieval building.",
+        "price": 1200,
+        "quantity": 8
+    },
+    {
+        "id": 12,
+        "hotel_id": 6,
+        "title": "Market Square Double",
+        "description": "View of historic Rynok Square.",
+        "price": 2200,
+        "quantity": 4
+    },
+    {
+        "id": 13,
+        "hotel_id": 7,
+        "title": "Mountain View",
+        "description": "Room with Carpathian views.",
+        "price": 2000,
+        "quantity": 20
+    },
+    {
+        "id": 14,
+        "hotel_id": 7,
+        "title": "Fireplace Suite",
+        "description": "Cozy suite with real wood fireplace.",
+        "price": 4200,
+        "quantity": 3
+    },
+    {
+        "id": 15,
+        "hotel_id": 8,
+        "title": "Forest Room",
+        "description": "Rustic room surrounded by pine forest.",
+        "price": 1600,
+        "quantity": 10
+    },
+    {
+        "id": 16,
+        "hotel_id": 8,
+        "title": "Alpine Suite",
+        "description": "Traditional Hutsul-style with hot tub.",
+        "price": 4800,
+        "quantity": 1
+    },
+    {
+        "id": 17,
+        "hotel_id": 9,
+        "title": "City Single",
+        "description": "Affordable single with city access.",
+        "price": 1300,
+        "quantity": 15
+    },
+    {
+        "id": 18,
+        "hotel_id": 9,
+        "title": "River View Suite",
+        "description": "Suite with Dnipro river panorama.",
+        "price": 6000,
+        "quantity": 2
+    }
+]
