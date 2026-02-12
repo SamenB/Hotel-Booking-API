@@ -1,0 +1,62 @@
+[
+    {
+        "id": 1,
+        "title": "Wi-Fi"
+    },
+    {
+        "id": 2,
+        "title": "Air Conditioning"
+    },
+    {
+        "id": 3,
+        "title": "TV"
+    },
+    {
+        "id": 4,
+        "title": "Mini Bar"
+    },
+    {
+        "id": 5,
+        "title": "Safe"
+    },
+    {
+        "id": 6,
+        "title": "Balcony"
+    },
+    {
+        "id": 7,
+        "title": "Coffee Machine"
+    },
+    {
+        "id": 8,
+        "title": "Work Desk"
+    },
+    {
+        "id": 9,
+        "title": "Bathrobe & Slippers"
+    },
+    {
+        "id": 10,
+        "title": "Room Service"
+    },
+    {
+        "id": 11,
+        "title": "Jacuzzi"
+    },
+    {
+        "id": 12,
+        "title": "Sea View"
+    },
+    {
+        "id": 13,
+        "title": "Mountain View"
+    },
+    {
+        "id": 14,
+        "title": "Fireplace"
+    },
+    {
+        "id": 15,
+        "title": "Kitchenette"
+    }
+]

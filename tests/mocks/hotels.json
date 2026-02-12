@@ -1,0 +1,71 @@
+[
+    {
+        "id": 1,
+        "title": "Grand Kyiv Hotel",
+        "location": "Kyiv, Khreshchatyk Street 15",
+        "images": [
+            "hotels/kyiv_1.jpg",
+            "hotels/kyiv_2.jpg"
+        ]
+    },
+    {
+        "id": 2,
+        "title": "Kyiv Business Center",
+        "location": "Kyiv, Shevchenko Boulevard 42",
+        "images": [
+            "hotels/kyiv_business.jpg"
+        ]
+    },
+    {
+        "id": 3,
+        "title": "Pechersk Boutique",
+        "location": "Kyiv, Lavrska Street 8",
+        "images": null
+    },
+    {
+        "id": 4,
+        "title": "Odesa Beach Resort",
+        "location": "Odesa, Arcadia Beach 24",
+        "images": [
+            "hotels/odesa_beach.jpg",
+            "hotels/odesa_pool.jpg"
+        ]
+    },
+    {
+        "id": 5,
+        "title": "Odesa Opera Hotel",
+        "location": "Odesa, Deribasivska Street 5",
+        "images": []
+    },
+    {
+        "id": 6,
+        "title": "Lviv Old Town",
+        "location": "Lviv, Rynok Square 12",
+        "images": [
+            "hotels/lviv_oldtown.jpg"
+        ]
+    },
+    {
+        "id": 7,
+        "title": "Bukovel Mountain Lodge",
+        "location": "Bukovel, Ski Resort Area 14",
+        "images": [
+            "hotels/bukovel_1.jpg",
+            "hotels/bukovel_ski.jpg"
+        ]
+    },
+    {
+        "id": 8,
+        "title": "Carpathian Chalet",
+        "location": "Bukovel, Mountain View Road 7",
+        "images": [
+            "hotels/carpathian.jpg"
+        ]
+    },
+    {
+        "id": 9,
+        "title": "Dnipro Riverside",
+        "location": "Dnipro, European Square 1",
+        "images": null
+    }
+]

@@ -50,12 +50,15 @@ class HotelsRepository(BaseRepository):
             hotels_ids_with_rooms = hotels_ids_with_rooms.where(
                 RoomsOrm.id.notin_(rooms_ids_to_get)
             )
-        hotels_ids_with_rooms = hotels_ids_with_rooms.cte("hotels_ids_with_rooms")
-        hotels = await self.get_filtered(
-            HotelsOrm.id.in_(hotels_ids_with_rooms),
-            limit=limit,
-            offset=offset,
-            title=title,
-            location=location,
+        
+        query = select(self.model).where(
+            HotelsOrm.id.in_(hotels_ids_with_rooms)
         )
-        return hotels
+        if title:
+            query = query.filter(self.model.title.ilike(f"%{title}%"))
+        if location:
+            query = query.filter(self.model.location.ilike(f"%{location}%"))
+        query = query.limit(limit).offset(offset)
+        
+        result = await self.session.execute(query)
+        return [self.mapper.map_to_schema(model) for model in result.scalars().all()]

@@ -43,19 +43,11 @@ async def create_booking(
         }
     ),
 ):
-    room = await db.rooms.get_one_or_none(id=booking_data.room_id)
-    if not room:
-        raise HTTPException(status_code=404, detail="Room not found")
-    hotel_id = room.hotel_id
-    price: int = room.price
-    booking = await db.bookings.add(
-        BookingAdd(
-            **booking_data.model_dump(),
-            hotel_id=hotel_id,
-            user_id=user_id,
-            price=price,
-        )
-    )
+    booking, error = await db.bookings.create_booking(booking_data, user_id, db)
+    if error == "Room not found":
+        raise HTTPException(status_code=404, detail=error)
+    if error:
+        raise HTTPException(status_code=409, detail=error)
     await db.commit()
     return {"status": "OK", "data": booking}
 
