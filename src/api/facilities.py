@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Body, Query
+from fastapi import APIRouter, Body
 from src.schemas.facilities import FacilityAdd
 from src.api.dependencies import DBDep
 from fastapi_cache.decorator import cache

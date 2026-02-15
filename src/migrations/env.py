@@ -13,7 +13,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from src.database import Base
-from src.models import *
+from src.models import * # noqa: F403
 from src.config import settings
 
 

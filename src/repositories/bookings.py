@@ -1,7 +1,6 @@
 from src.repositories.base import BaseRepository
 from src.models.bookings import BookingsOrm
 from src.repositories.mappers.mappers import BookingMapper
-from src.repositories.utils import room_ids_for_booking
 from src.schemas.bookings import BookingAddRequest, BookingAdd
 from sqlalchemy import select, func
 from datetime import date

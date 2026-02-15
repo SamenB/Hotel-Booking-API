@@ -2,7 +2,7 @@ from datetime import date
 from src.repositories.base import BaseRepository
 from src.models.rooms import RoomsOrm
 from src.repositories.utils import room_ids_for_booking
-from sqlalchemy.orm import selectinload, joinedload
+from sqlalchemy.orm import joinedload
 from sqlalchemy import select
 from src.repositories.mappers.mappers import RoomMapper
 from src.schemas.rooms import RoomWithFacilities

@@ -2,12 +2,10 @@
 from PIL import Image
 from pathlib import Path
 import asyncio
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy import update
 
 from src.tasks.celery_app import celery_instance
 from src.models.hotels import HotelsOrm
-from src.config import settings
 from src.utils.db_manager import DBManager
 from src.database import new_session_null_pool
 
