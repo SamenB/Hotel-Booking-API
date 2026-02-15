@@ -1,3 +1,4 @@
+from typing import ClassVar, Any, Sequence
 from sqlalchemy import select, insert, update, delete
 from pydantic import BaseModel
 from src.repositories.mappers.base import DataMapper
@@ -8,8 +9,8 @@ class BaseRepository:
     Base repository class for working with custom sessions and models
     """
 
-    model = None
-    mapper: DataMapper = None
+    model: ClassVar[type[Any]]
+    mapper: ClassVar[type[DataMapper]]
 
     def __init__(self, session):
         self.session = session
@@ -30,11 +31,11 @@ class BaseRepository:
             return None
         return self.mapper.map_to_schema(model)
 
-    async def add(self, data: BaseModel | list[BaseModel]):
-        if isinstance(data, list):
-            data_to_insert = [sample.model_dump() for sample in data]
-        else:
+    async def add(self, data: BaseModel | Sequence[BaseModel]):
+        if isinstance(data, BaseModel):
             data_to_insert = data.model_dump()
+        else:
+            data_to_insert = [sample.model_dump() for sample in data]
         add_stmt = insert(self.model).values(data_to_insert).returning(self.model)
         result = await self.session.execute(add_stmt)
         model = result.scalars().one()
@@ -52,7 +53,7 @@ class BaseRepository:
         delete_stmt = delete(self.model).filter_by(**filter_by)
         await self.session.execute(delete_stmt)
 
-    async def add_bulk(self, data: list[BaseModel]) -> None:
+    async def add_bulk(self, data: Sequence[BaseModel]) -> None:
         """
         Bulk insert multiple records in a single SQL statement.
         More efficient than inserting one by one.

@@ -32,7 +32,7 @@ def load_mock(filename: str) -> list[dict]:
 
 
 @pytest.fixture(scope="function")
-async def db() -> DBManager:
+async def db():
     async with DBManager(session_factory=new_session_null_pool) as db:
         yield db
 

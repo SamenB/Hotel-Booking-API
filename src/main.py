@@ -16,6 +16,7 @@ from src.init import redis_manager
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await redis_manager.connect()  # when app starts
+    assert redis_manager.redis is not None
     FastAPICache.init(RedisBackend(redis_manager.redis), prefix="fastapi-cache")
     yield
     await redis_manager.close()  # when app stops/restarts

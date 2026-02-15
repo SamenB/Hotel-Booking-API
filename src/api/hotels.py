@@ -24,8 +24,8 @@ async def get_hotel_by_id(hotel_id: int, db: DBDep):
 async def get_hotels(
     db: DBDep,
     pagination: PaginationDep,
-    date_from: date = Query(examples="2026-01-01"),
-    date_to: date = Query(examples="2026-01-05"),
+    date_from: date = Query(examples=["2026-01-01"]),
+    date_to: date = Query(examples=["2026-01-05"]),
     available: bool = Query(True, description="Hotels with available rooms or without"),
     title: str | None = Query(None, description="Hotel title"),
     location: str | None = Query(None, description="Hotel location"),
@@ -47,7 +47,7 @@ async def get_hotels(
 @router.post("")
 async def create_hotel(
     db: DBDep,
-    hotel_data: HotelAdd | list[HotelAdd] = Body(
+    hotel_data: HotelAdd | list[HotelAdd] = Body(  # type: ignore[arg-type]
         openapi_examples={
             "1": {
                 "summary": "Hotel 3",

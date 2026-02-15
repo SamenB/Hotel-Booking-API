@@ -42,3 +42,6 @@ class DBManager:
                         await asyncio.sleep(0.1 * (attempt + 1))
                         continue
                 raise
+
+    async def rollback(self):
+        await self.session.rollback()

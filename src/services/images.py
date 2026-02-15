@@ -17,5 +17,5 @@ class ImageService:
         with open(temp_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
-        process_hotel_image.delay(hotel_id, temp_path)
+        process_hotel_image.delay(hotel_id, temp_path)  # type: ignore[attr-defined]
         return temp_path
