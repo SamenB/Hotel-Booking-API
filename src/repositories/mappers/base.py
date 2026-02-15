@@ -1,9 +1,9 @@
 class DataMapper:
     """Base Data Mapper for ORM ↔ Schema transformation."""
-    
+
     db_model = None
     schema = None
-    
+
     @classmethod
     def map_to_schema(cls, model):
         """ORM model → Pydantic schema"""

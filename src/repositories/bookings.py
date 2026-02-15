@@ -39,8 +39,6 @@ class BookingsRepository(BaseRepository):
         return booking, None
 
     async def get_bookings_with_today_checkin(self):
-        query = select(self.model).where(
-            func.date(self.model.check_in_date) == date.today()
-        )
+        query = select(self.model).where(func.date(self.model.check_in_date) == date.today())
         res = await self.session.execute(query)
         return [self.mapper.map_to_schema(model) for model in res.scalars().all()]

@@ -96,9 +96,7 @@ async def bookings_timeline(db: DBDep):
     )
 
     room_ids = sorted(set(b.room_id for b in bookings))
-    groups_js = ",".join(
-        [f'{{id: {rid}, content: "Room {rid}"}}' for rid in room_ids[:50]]
-    )
+    groups_js = ",".join([f'{{id: {rid}, content: "Room {rid}"}}' for rid in room_ids[:50]])
 
     html = f"""
     <!DOCTYPE html>

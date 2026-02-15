@@ -15,11 +15,7 @@ class BaseRepository:
         self.session = session
 
     async def get_filtered(self, *filter, **filter_by):
-        query = (
-            select(self.model)
-            .filter(*filter)
-            .filter_by(**filter_by)
-        )
+        query = select(self.model).filter(*filter).filter_by(**filter_by)
         result = await self.session.execute(query)
         return [self.mapper.map_to_schema(model) for model in result.scalars().all()]
 
@@ -44,9 +40,7 @@ class BaseRepository:
         model = result.scalars().one()
         return self.mapper.map_to_schema(model)
 
-    async def edit(
-        self, data: BaseModel, exclude_unset: bool = False, **filter_by
-    ) -> None:
+    async def edit(self, data: BaseModel, exclude_unset: bool = False, **filter_by) -> None:
         update_stmt = (
             update(self.model)
             .filter_by(**filter_by)

@@ -1,13 +1,11 @@
-import asyncio                            
-from sqlalchemy.exc import OperationalError  
+import asyncio
+from sqlalchemy.exc import OperationalError
 
 from src.repositories.hotels import HotelsRepository
 from src.repositories.rooms import RoomsRepository
 from src.repositories.users import UsersRepository
 from src.repositories.bookings import BookingsRepository
 from src.repositories.facilities import FacilitiesRepository, RoomFacilitiesRepository
-
-
 
 
 class DBManager:
@@ -30,9 +28,9 @@ class DBManager:
         await self.session.close()
 
     async def commit(self):
-        '''
-            session commit with deadlock exception handling
-        '''
+        """
+        session commit with deadlock exception handling
+        """
         for attempt in range(3):
             try:
                 await self.session.commit()

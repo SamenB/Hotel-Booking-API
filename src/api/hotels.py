@@ -96,7 +96,6 @@ async def upload_hotel_image(hotel_id: int, file: UploadFile = File(...)):
     return {"status": "OK", "message": "Image processing started"}
 
 
-
 @router.get("/{hotel_id}/images")
 async def get_hotel_images(hotel_id: int, db: DBDep):
     hotel = await db.hotels.get_one_or_none(id=hotel_id)

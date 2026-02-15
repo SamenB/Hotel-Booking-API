@@ -80,15 +80,11 @@ async def create_room(
 
 
 @router.put("/{room_id}")
-async def update_room(
-    db: DBDep, hotel_id: int, room_id: int, room_data: RoomAddRequest
-):
+async def update_room(db: DBDep, hotel_id: int, room_id: int, room_data: RoomAddRequest):
     room = await db.rooms.get_one_or_none(id=room_id)
     if not room:
         raise HTTPException(status_code=404, detail="Room not found")
-    await db.rooms.edit(
-        RoomAdd(**room_data.model_dump(), hotel_id=hotel_id), id=room_id
-    )
+    await db.rooms.edit(RoomAdd(**room_data.model_dump(), hotel_id=hotel_id), id=room_id)
     await db.room_facilities.set_room_facilities(room_id, room_data.facilities)
     await db.commit()
     return {"status": "OK"}
@@ -133,9 +129,7 @@ async def create_rooms_bulk(db: DBDep, rooms_data: list[RoomAddBulk]):
     for hotel_id in hotel_ids:
         hotel = await db.hotels.get_one_or_none(id=hotel_id)
         if not hotel:
-            raise HTTPException(
-                status_code=404, detail=f"Hotel with id={hotel_id} not found"
-            )
+            raise HTTPException(status_code=404, detail=f"Hotel with id={hotel_id} not found")
 
     # Конвертируем в RoomAdd (схема та же, просто для ясности)
     rooms_to_add = [RoomAdd(**room.model_dump()) for room in rooms_data]

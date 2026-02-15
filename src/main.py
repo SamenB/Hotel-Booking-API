@@ -15,10 +15,11 @@ from src.init import redis_manager
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await redis_manager.connect() # when app starts
+    await redis_manager.connect()  # when app starts
     FastAPICache.init(RedisBackend(redis_manager.redis), prefix="fastapi-cache")
     yield
-    await redis_manager.close() # when app stops/restarts
+    await redis_manager.close()  # when app stops/restarts
+
 
 app = FastAPI(lifespan=lifespan)
 

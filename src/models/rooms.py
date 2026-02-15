@@ -3,7 +3,6 @@ from src.database import Base
 from sqlalchemy import String, BigInteger, ForeignKey
 
 
-
 class RoomsOrm(Base):
     __tablename__ = "rooms"
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)

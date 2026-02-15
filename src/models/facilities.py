@@ -4,7 +4,6 @@ from src.database import Base
 from sqlalchemy import String, BigInteger
 
 
-
 class FacilitiesOrm(Base):
     __tablename__ = "facilities"
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)

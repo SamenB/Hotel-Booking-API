@@ -13,7 +13,7 @@ celery_instance = Celery(
 celery_instance.conf.beat_schedule = {
     "send-emails-to-users-with-today-checkin": {
         "task": "booking_tooday_checkin",
-        "schedule": 5,  # every 5 s 
+        "schedule": 5,  # every 5 s
     },
 }
 # celery -A src.tasks.celery_app:celery_instance beat --loglevel=info

@@ -31,13 +31,9 @@ class RoomFacilitiesRepository(BaseRepository):
             await self.session.execute(delete_stmt)
         if ids_to_add:
             add_stmt = insert(self.model).values(
-                [
-                    {"room_id": room_id, "facility_id": facility_id}
-                    for facility_id in ids_to_add
-                ]
+                [{"room_id": room_id, "facility_id": facility_id} for facility_id in ids_to_add]
             )
             await self.session.execute(add_stmt)
-
 
     # async def set_room_facilities(self, room_id: int, facility_ids: list[int]):
     #     # 1. Fetch the room object along with its currently associated facilities
@@ -56,8 +52,8 @@ class RoomFacilitiesRepository(BaseRepository):
 
     #     # 3. Synchronize the relationship by replacing the collection
     #     # We simply assign the new list to the relationship attribute
-    #     room.facilities = new_facilities 
-        
+    #     room.facilities = new_facilities
+
     #     # 4. SQLAlchemy's Unit of Work will automatically perform the "diff":
     #     # - Any facility removed from the list will be deleted from the 'room_facilities' table
     #     # - Any facility added to the list will be inserted into the 'room_facilities' table
