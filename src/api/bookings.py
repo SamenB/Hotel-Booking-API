@@ -4,6 +4,7 @@ from src.schemas.bookings import BookingAddRequest, BookingAdd, BookingBulkReque
 from src.api.dependencies import DBDep, UserDep
 from fastapi.responses import HTMLResponse
 from src.exeptions import ObjectNotFoundException, AllRoomsAreBookedException
+from loguru import logger
 
 
 router = APIRouter(prefix="/bookings", tags=["Bookings"])
@@ -47,10 +48,13 @@ async def create_booking(
     try:
         booking = await db.bookings.create_booking(booking_data, user_id, db)
     except ObjectNotFoundException:
+        logger.warning("Room not found: room_id={}", booking_data.room_id)
         raise HTTPException(status_code=400, detail="Room not found")
     except AllRoomsAreBookedException:
+        logger.warning("All rooms booked: room_id={}, dates={}-{}", booking_data.room_id, booking_data.check_in_date, booking_data.check_out_date)
         raise HTTPException(status_code=409, detail="All rooms are booked")
     await db.commit()
+    logger.info("Booking created: {}", booking)
     return {"status": "OK", "data": booking}
 
 
@@ -72,6 +76,7 @@ async def create_bookings_bulk(db: DBDep, bookings_data: list[BookingBulkRequest
         await db.bookings.add_bulk(valid)
         await db.commit()
 
+    logger.info("Bulk bookings: inserted={}, skipped={}", len(valid), len(bookings_data) - len(valid))
     return {"inserted": len(valid), "skipped": len(bookings_data) - len(valid)}
 
 

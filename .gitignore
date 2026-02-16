@@ -6,3 +6,5 @@ static/*
 !static/.gitkeep
 temp/*
 !temp/.gitkeep
+logs/*
+!logs/.gitkeep

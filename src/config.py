@@ -4,7 +4,7 @@ from typing import Literal
 
 class Settings(BaseSettings):
     MODE: Literal["TEST", "LOCAL", "DEV", "PROD"] = "LOCAL"
-
+    LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "DEBUG"
     DB_NAME: str
     DB_USER: str
     DB_PASS: str

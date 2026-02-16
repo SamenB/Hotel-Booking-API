@@ -11,6 +11,7 @@ from src.schemas.rooms import (
 from src.api.dependencies import DBDep
 from src.schemas.facilities import FacilityRoomAdd
 from src.exeptions import ObjectNotFoundException
+from loguru import logger
 
 
 router = APIRouter(prefix="/hotels/{hotel_id}/rooms", tags=["Rooms"])
@@ -34,10 +35,12 @@ async def get_all_rooms(
     date_to: date = Query(examples=["2025-01-05"]),
 ):
     if date_from >= date_to:
+        logger.warning("Invalid date range: date_from={}, date_to={}", date_from, date_to)
         raise HTTPException(status_code=422, detail="date_to must be after date_from")
     rooms = await db.rooms.get_filtered_by_time(
         hotel_id=hotel_id, date_from=date_from, date_to=date_to
     )
+    logger.info("Rooms retrieved: count={}", len(rooms))
     return rooms
 
 
@@ -81,6 +84,7 @@ async def create_room(
     ]
     await db.room_facilities.add_bulk(room_facilities)
     await db.commit()
+    logger.info("Room created: id={}, hotel_id={}", room.id, hotel_id)
     return {"status": "OK", "data": room}
 
 
@@ -93,6 +97,7 @@ async def update_room(db: DBDep, hotel_id: int, room_id: int, room_data: RoomAdd
     await db.rooms.edit(RoomAdd(**room_data.model_dump(), hotel_id=hotel_id), id=room_id)
     await db.room_facilities.set_room_facilities(room_id, room_data.facilities)
     await db.commit()
+    logger.info("Room updated: id={}", room_id)
     return {"status": "OK"}
 
 
@@ -112,6 +117,7 @@ async def update_room_partially(db: DBDep, room_id: int, room_data: RoomPatchReq
     if "facilities" in room_data_dict:
         await db.room_facilities.set_room_facilities(room_id, room_data.facilities)
     await db.commit()
+    logger.info("Room partially updated: id={}", room_id)
     return {"status": "OK"}
 
 
@@ -123,6 +129,7 @@ async def delete_room(db: DBDep, room_id: int):
         raise HTTPException(status_code=404, detail="Room not found")
     await db.rooms.delete(id=room_id)
     await db.commit()
+    logger.info("Room deleted: id={}", room_id)
     return {"status": "OK"}
 
 
@@ -145,5 +152,5 @@ async def create_rooms_bulk(db: DBDep, rooms_data: list[RoomAddBulk]):
 
     await db.rooms.add_bulk(rooms_to_add)
     await db.commit()
-
+    logger.info("Bulk rooms created: count={}", len(rooms_to_add))
     return {"status": "OK", "created": len(rooms_to_add)}

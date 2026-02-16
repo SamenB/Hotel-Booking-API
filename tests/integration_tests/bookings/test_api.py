@@ -42,7 +42,7 @@ async def test_booking_exceeds_room_quantity(authenticated_ac):
         },
     )
     assert response2.status_code == 409
-    assert "No available rooms" in response2.json()["detail"]
+    assert "All rooms are booked" in response2.json()["detail"]
 
 
 @pytest.mark.parametrize(

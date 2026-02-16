@@ -6,6 +6,7 @@ from asyncpg import UniqueViolationError
 from src.repositories.mappers.base import DataMapper
 from src.database import Base
 from src.exeptions import ObjectNotFoundException, ObjectAlreadyExistsException
+from loguru import logger
 
 
 class BaseRepository:
@@ -41,6 +42,7 @@ class BaseRepository:
         try:
             model = result.scalar_one()
         except NoResultFound:
+            logger.debug("Object not found in {}: filters={}", self.model.__tablename__, filter_by)
             raise ObjectNotFoundException
         return self.mapper.map_to_schema(model)
 
@@ -54,6 +56,7 @@ class BaseRepository:
             result = await self.session.execute(add_stmt)
             model = result.scalars().one()
         except IntegrityError as ex:
+            logger.warning("IntegrityError in {}: {}", self.model.__tablename__, str(ex))
             if isinstance(ex.orig.__cause__, UniqueViolationError):
                 raise ObjectAlreadyExistsException from ex
             else:
