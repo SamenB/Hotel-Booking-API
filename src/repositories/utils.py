@@ -16,9 +16,9 @@ def room_ids_for_booking(date_from: date, date_to: date, hotel_id: int | None = 
     )
 
     # CTE 2: available_rooms - calculate available room quantity
-    rooms_available = (
-        RoomsOrm.quantity - func.coalesce(rooms_count.c.rooms_booked, 0)
-    ).label("rooms_available")
+    rooms_available = (RoomsOrm.quantity - func.coalesce(rooms_count.c.rooms_booked, 0)).label(
+        "rooms_available"
+    )
     available_rooms = (
         select(RoomsOrm.id.label("room_id"), rooms_available)
         .select_from(RoomsOrm)

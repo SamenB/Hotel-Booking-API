@@ -1,10 +1,11 @@
 from src.repositories.base import BaseRepository
 from src.models.bookings import BookingsOrm
 from src.repositories.mappers.mappers import BookingMapper
-from src.repositories.utils import room_ids_for_booking
 from src.schemas.bookings import BookingAddRequest, BookingAdd
+from src.exeptions import ObjectNotFoundException, AllRoomsAreBookedException
 from sqlalchemy import select, func
 from datetime import date
+
 
 
 class BookingsRepository(BaseRepository):
@@ -14,9 +15,10 @@ class BookingsRepository(BaseRepository):
     async def create_booking(self, booking_data: BookingAddRequest, user_id: int, db):
         """Validate availability and create booking."""
         # 1. Check if room exists
-        room = await db.rooms.get_one_or_none(id=booking_data.room_id)
-        if not room:
-            return None, "Room not found"
+        try:
+            room = await db.rooms.get_one(id=booking_data.room_id)
+        except ObjectNotFoundException:
+            raise ObjectNotFoundException
 
         # 2. Check room availability for the selected dates
         available_rooms = await db.rooms.get_filtered_by_time(
@@ -26,7 +28,7 @@ class BookingsRepository(BaseRepository):
         )
         available_ids = [r.id for r in available_rooms]
         if booking_data.room_id not in available_ids:
-            return None, "No available rooms for the selected dates"
+            raise AllRoomsAreBookedException
 
         # 3. Create booking
         booking = await self.add(
@@ -37,11 +39,9 @@ class BookingsRepository(BaseRepository):
                 price=room.price,
             )
         )
-        return booking, None
+        return booking
 
     async def get_bookings_with_today_checkin(self):
-        query = select(self.model).where(
-            func.date(self.model.check_in_date) == date.today()
-        )
+        query = select(self.model).where(func.date(self.model.check_in_date) == date.today())
         res = await self.session.execute(query)
         return [self.mapper.map_to_schema(model) for model in res.scalars().all()]

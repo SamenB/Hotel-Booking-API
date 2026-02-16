@@ -25,10 +25,7 @@ class HotelsRepository(BaseRepository):
             query = query.filter(self.model.location.ilike(f"%{location}%"))
         query = query.limit(limit).offset(offset)
         result = await self.session.execute(query)
-        return [
-            self.mapper.map_to_schema(model)
-            for model in result.scalars().all()
-        ]
+        return [self.mapper.map_to_schema(model) for model in result.scalars().all()]
 
     async def get_filtered_by_time(
         self,
@@ -43,22 +40,18 @@ class HotelsRepository(BaseRepository):
         rooms_ids_to_get = room_ids_for_booking(date_from, date_to)
         hotels_ids_with_rooms = select(RoomsOrm.hotel_id)
         if available:
-            hotels_ids_with_rooms = hotels_ids_with_rooms.where(
-                RoomsOrm.id.in_(rooms_ids_to_get)
-            )
+            hotels_ids_with_rooms = hotels_ids_with_rooms.where(RoomsOrm.id.in_(rooms_ids_to_get))
         else:
             hotels_ids_with_rooms = hotels_ids_with_rooms.where(
                 RoomsOrm.id.notin_(rooms_ids_to_get)
             )
-        
-        query = select(self.model).where(
-            HotelsOrm.id.in_(hotels_ids_with_rooms)
-        )
+
+        query = select(self.model).where(HotelsOrm.id.in_(hotels_ids_with_rooms))
         if title:
             query = query.filter(self.model.title.ilike(f"%{title}%"))
         if location:
             query = query.filter(self.model.location.ilike(f"%{location}%"))
         query = query.limit(limit).offset(offset)
-        
+
         result = await self.session.execute(query)
         return [self.mapper.map_to_schema(model) for model in result.scalars().all()]

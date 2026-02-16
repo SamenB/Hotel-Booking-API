@@ -1,11 +1,13 @@
-from fastapi.exceptions import HTTPException
 from pwdlib import PasswordHash
 from datetime import datetime, timedelta, timezone
 import jwt
+
 from src.config import settings
+from src.services.base import BaseService
+from src.exeptions import TokenExpiredException, InvalidTokenException
 
 
-class AuthService:
+class AuthService(BaseService):
     def __init__(self):
         self.password_hash = PasswordHash.recommended()
 
@@ -27,9 +29,9 @@ class AuthService:
             )
             return payload
         except jwt.ExpiredSignatureError:
-            raise HTTPException(status_code=401, detail="Token expired")
+            raise TokenExpiredException
         except jwt.InvalidTokenError:
-            raise HTTPException(status_code=401, detail="Invalid token")
+            raise InvalidTokenException
 
     def hash_password(self, password: str) -> str:
         return self.password_hash.hash(password)

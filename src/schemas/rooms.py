@@ -25,6 +25,7 @@ class Room(RoomAdd):
 class RoomWithFacilities(Room):
     facilities: list[Facility]
 
+
 class RoomPatchRequest(BaseModel):
     title: str | None = Field(None, description="Title of the room")
     description: str | None = Field(None, description="Description of the room")

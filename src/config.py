@@ -4,7 +4,7 @@ from typing import Literal
 
 class Settings(BaseSettings):
     MODE: Literal["TEST", "LOCAL", "DEV", "PROD"] = "LOCAL"
-
+    LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "DEBUG"
     DB_NAME: str
     DB_USER: str
     DB_PASS: str
@@ -12,7 +12,6 @@ class Settings(BaseSettings):
     DB_PORT: int
     REDIS_HOST: str
     REDIS_PORT: int
-
 
     @property
     def REDIS_URL(self):
@@ -30,4 +29,4 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 
-settings = Settings()
+settings = Settings()  # type: ignore[call-arg]

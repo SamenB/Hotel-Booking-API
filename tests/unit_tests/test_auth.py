@@ -2,10 +2,7 @@ from src.services.auth import AuthService
 
 
 def test_create_access_token():
-    data = {
-        "username": "testuser",
-        "password": "testpass"
-    }
+    data = {"username": "testuser", "password": "testpass"}
 
     jwt_token = AuthService().create_access_token(data)
     assert jwt_token

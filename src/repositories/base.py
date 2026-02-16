@@ -1,6 +1,12 @@
+from typing import Any, Sequence
 from sqlalchemy import select, insert, update, delete
+from sqlalchemy.exc import NoResultFound, IntegrityError
 from pydantic import BaseModel
+from asyncpg import UniqueViolationError
 from src.repositories.mappers.base import DataMapper
+from src.database import Base
+from src.exeptions import ObjectNotFoundException, ObjectAlreadyExistsException
+from loguru import logger
 
 
 class BaseRepository:
@@ -8,25 +14,21 @@ class BaseRepository:
     Base repository class for working with custom sessions and models
     """
 
-    model = None
-    mapper: DataMapper = None
+    model: type[Base]
+    mapper: type[DataMapper]
 
     def __init__(self, session):
         self.session = session
 
-    async def get_filtered(self, *filter, **filter_by):
-        query = (
-            select(self.model)
-            .filter(*filter)
-            .filter_by(**filter_by)
-        )
+    async def get_filtered(self, *filter, **filter_by) -> list[BaseModel | Any]:
+        query = select(self.model).filter(*filter).filter_by(**filter_by)
         result = await self.session.execute(query)
         return [self.mapper.map_to_schema(model) for model in result.scalars().all()]
 
-    async def get_all(self, *args, **kwargs):
+    async def get_all(self, *args, **kwargs) -> list[BaseModel | Any]:
         return await self.get_filtered(**kwargs)
 
-    async def get_one_or_none(self, **filter_by):
+    async def get_one_or_none(self, **filter_by) -> BaseModel | None | Any:
         query = select(self.model).filter_by(**filter_by)
         result = await self.session.execute(query)
         model = result.scalars().one_or_none()
@@ -34,19 +36,34 @@ class BaseRepository:
             return None
         return self.mapper.map_to_schema(model)
 
-    async def add(self, data: BaseModel | list[BaseModel]):
-        if isinstance(data, list):
-            data_to_insert = [sample.model_dump() for sample in data]
-        else:
-            data_to_insert = data.model_dump()
-        add_stmt = insert(self.model).values(data_to_insert).returning(self.model)
-        result = await self.session.execute(add_stmt)
-        model = result.scalars().one()
+    async def get_one(self, **filter_by) -> BaseModel | Any:
+        query = select(self.model).filter_by(**filter_by)
+        result = await self.session.execute(query)
+        try:
+            model = result.scalar_one()
+        except NoResultFound:
+            logger.debug("Object not found in {}: filters={}", self.model.__tablename__, filter_by)
+            raise ObjectNotFoundException
         return self.mapper.map_to_schema(model)
 
-    async def edit(
-        self, data: BaseModel, exclude_unset: bool = False, **filter_by
-    ) -> None:
+    async def add(self, data: BaseModel | Sequence[BaseModel]) -> BaseModel | Sequence[BaseModel]:
+        if isinstance(data, BaseModel):
+            data_to_insert = data.model_dump()
+        else:
+            data_to_insert = [sample.model_dump() for sample in data]
+        try:
+            add_stmt = insert(self.model).values(data_to_insert).returning(self.model)
+            result = await self.session.execute(add_stmt)
+            model = result.scalars().one()
+        except IntegrityError as ex:
+            logger.warning("IntegrityError in {}: {}", self.model.__tablename__, str(ex))
+            if isinstance(ex.orig.__cause__, UniqueViolationError):
+                raise ObjectAlreadyExistsException from ex
+            else:
+                raise ex
+        return self.mapper.map_to_schema(model)
+
+    async def edit(self, data: BaseModel, exclude_unset: bool = False, **filter_by) -> None:
         update_stmt = (
             update(self.model)
             .filter_by(**filter_by)
@@ -58,11 +75,17 @@ class BaseRepository:
         delete_stmt = delete(self.model).filter_by(**filter_by)
         await self.session.execute(delete_stmt)
 
-    async def add_bulk(self, data: list[BaseModel]) -> None:
+    async def add_bulk(self, data: Sequence[BaseModel]) -> None:
         """
         Bulk insert multiple records in a single SQL statement.
         More efficient than inserting one by one.
         """
-        data_to_insert = [item.model_dump() for item in data]
-        add_stmt = insert(self.model).values(data_to_insert)
-        await self.session.execute(add_stmt)
+        try:
+            data_to_insert = [item.model_dump() for item in data]
+            add_stmt = insert(self.model).values(data_to_insert)
+            await self.session.execute(add_stmt)
+        except IntegrityError as ex:
+            if isinstance(ex.orig.__cause__, UniqueViolationError):
+                raise ObjectAlreadyExistsException from ex
+            else:
+                raise ex
