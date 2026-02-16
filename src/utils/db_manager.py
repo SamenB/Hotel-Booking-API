@@ -1,5 +1,6 @@
 import asyncio
 from sqlalchemy.exc import OperationalError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.repositories.hotels import HotelsRepository
 from src.repositories.rooms import RoomsRepository

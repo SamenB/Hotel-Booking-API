@@ -5,7 +5,7 @@ from src.schemas.users import UserRequestAdd, UserAdd, UserLogin
 from src.services.auth import AuthService
 from src.api.dependencies import UserDep
 from src.api.dependencies import DBDep
-from src.exeptions import ObjectAlreadyExistsException
+from src.exeptions import ObjectAlreadyExistsException, DatabaseException
 from loguru import logger
 
 router = APIRouter(prefix="/auth", tags=["authorization and authentication"])
@@ -29,6 +29,8 @@ async def register_user(db: DBDep, user_data: UserRequestAdd):
             status_code=status.HTTP_409_CONFLICT,
             detail="User with this email or username already exists",
         )
+    except DatabaseException:
+        raise HTTPException(status_code=503, detail="Service temporarily unavailable")
     return {"status": "OK"}
 
 
@@ -56,6 +58,8 @@ async def register_users_bulk(db: DBDep, users_data: list[UserRequestAdd]):
             status_code=status.HTTP_409_CONFLICT,
             detail="One or more users already exist",
         )
+    except DatabaseException:
+        raise HTTPException(status_code=503, detail="Service temporarily unavailable")
 
     return {"status": "OK", "created": len(users_to_add)}
 

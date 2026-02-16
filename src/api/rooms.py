@@ -3,14 +3,17 @@ from fastapi.exceptions import HTTPException  # noqa: F401
 from fastapi import APIRouter, Body, Query
 from src.schemas.rooms import (
     RoomAddRequest,
-    RoomAdd,
     RoomAddBulk,
     RoomPatchRequest,
-    RoomPatch,
 )
 from src.api.dependencies import DBDep
-from src.schemas.facilities import FacilityRoomAdd
-from src.exeptions import ObjectNotFoundException
+from src.exeptions import (
+    ObjectNotFoundException,
+    ObjectAlreadyExistsException,
+    InvalidDateRangeException,
+    DatabaseException,
+)
+from src.services.rooms import RoomService
 from loguru import logger
 
 
@@ -21,7 +24,7 @@ bulk_router = APIRouter(prefix="/rooms", tags=["Rooms"])
 @router.get("/{room_id}")
 async def get_room_by_id(db: DBDep, hotel_id: int, room_id: int):
     try:
-        room = await db.rooms.get_one(id=room_id, hotel_id=hotel_id)
+        room = await RoomService(db).get_room_by_id(hotel_id, room_id)
     except ObjectNotFoundException:
         raise HTTPException(status_code=404, detail="Room not found")
     return room
@@ -34,13 +37,12 @@ async def get_all_rooms(
     date_from: date = Query(examples=["2025-01-01"]),
     date_to: date = Query(examples=["2025-01-05"]),
 ):
-    if date_from >= date_to:
-        logger.warning("Invalid date range: date_from={}, date_to={}", date_from, date_to)
+    try:
+        rooms = await RoomService(db).get_all_rooms(hotel_id, date_from, date_to)
+    except InvalidDateRangeException:
         raise HTTPException(status_code=422, detail="date_to must be after date_from")
-    rooms = await db.rooms.get_filtered_by_time(
-        hotel_id=hotel_id, date_from=date_from, date_to=date_to
-    )
-    logger.info("Rooms retrieved: count={}", len(rooms))
+    except DatabaseException:
+        raise HTTPException(status_code=503, detail="Service temporarily unavailable")
     return rooms
 
 
@@ -74,30 +76,24 @@ async def create_room(
     ),
 ):
     try:
-        await db.hotels.get_one(id=hotel_id)
+        room = await RoomService(db).create_room(hotel_id, room_data)
     except ObjectNotFoundException:
         raise HTTPException(status_code=404, detail="Hotel not found")
-    room = await db.rooms.add(RoomAdd(**room_data.model_dump(), hotel_id=hotel_id))
-    room_facilities = [
-        FacilityRoomAdd(room_id=room.id, facility_id=facility_id)
-        for facility_id in room_data.facilities
-    ]
-    await db.room_facilities.add_bulk(room_facilities)
-    await db.commit()
-    logger.info("Room created: id={}, hotel_id={}", room.id, hotel_id)
+    except ObjectAlreadyExistsException:
+        raise HTTPException(status_code=409, detail="Room already exists")
+    except DatabaseException:
+        raise HTTPException(status_code=503, detail="Service temporarily unavailable")
     return {"status": "OK", "data": room}
 
 
 @router.put("/{room_id}")
 async def update_room(db: DBDep, hotel_id: int, room_id: int, room_data: RoomAddRequest):
     try:
-        await db.rooms.get_one(id=room_id)
+        await RoomService(db).update_room(hotel_id, room_id, room_data)
     except ObjectNotFoundException:
         raise HTTPException(status_code=404, detail="Room not found")
-    await db.rooms.edit(RoomAdd(**room_data.model_dump(), hotel_id=hotel_id), id=room_id)
-    await db.room_facilities.set_room_facilities(room_id, room_data.facilities)
-    await db.commit()
-    logger.info("Room updated: id={}", room_id)
+    except DatabaseException:
+        raise HTTPException(status_code=503, detail="Service temporarily unavailable")
     return {"status": "OK"}
 
 
@@ -107,29 +103,23 @@ async def update_room(db: DBDep, hotel_id: int, room_id: int, room_data: RoomAdd
     description="Update any fields that are provided",
 )
 async def update_room_partially(db: DBDep, room_id: int, room_data: RoomPatchRequest):
-    room_data_dict = room_data.model_dump(exclude_unset=True)
     try:
-        room = await db.rooms.get_one(id=room_id)
+        await RoomService(db).update_room_partially(room_id, room_data)
     except ObjectNotFoundException:
         raise HTTPException(status_code=404, detail="Room not found")
-    _room_data = RoomPatch(**room_data_dict, hotel_id=room.hotel_id)
-    await db.rooms.edit(_room_data, exclude_unset=True, id=room_id)
-    if "facilities" in room_data_dict:
-        await db.room_facilities.set_room_facilities(room_id, room_data.facilities)
-    await db.commit()
-    logger.info("Room partially updated: id={}", room_id)
+    except DatabaseException:
+        raise HTTPException(status_code=503, detail="Service temporarily unavailable")
     return {"status": "OK"}
 
 
 @router.delete("/{room_id}")
 async def delete_room(db: DBDep, room_id: int):
     try:
-        await db.rooms.get_one(id=room_id)
+        await RoomService(db).delete_room(room_id)
     except ObjectNotFoundException:
         raise HTTPException(status_code=404, detail="Room not found")
-    await db.rooms.delete(id=room_id)
-    await db.commit()
-    logger.info("Room deleted: id={}", room_id)
+    except DatabaseException:
+        raise HTTPException(status_code=503, detail="Service temporarily unavailable")
     return {"status": "OK"}
 
 
@@ -139,18 +129,12 @@ async def create_rooms_bulk(db: DBDep, rooms_data: list[RoomAddBulk]):
     Create multiple rooms at once (bulk insert).
     hotel_id is passed in body for each room.
     """
-    # Проверяем что все hotel_id существуют
-    hotel_ids = set(room.hotel_id for room in rooms_data)
-    for hotel_id in hotel_ids:
-        try:
-            await db.hotels.get_one(id=hotel_id)
-        except ObjectNotFoundException:
-            raise HTTPException(status_code=404, detail=f"Hotel with id={hotel_id} not found")
-
-    # Конвертируем в RoomAdd (схема та же, просто для ясности)
-    rooms_to_add = [RoomAdd(**room.model_dump()) for room in rooms_data]
-
-    await db.rooms.add_bulk(rooms_to_add)
-    await db.commit()
-    logger.info("Bulk rooms created: count={}", len(rooms_to_add))
-    return {"status": "OK", "created": len(rooms_to_add)}
+    try:
+        count = await RoomService(db).create_rooms_bulk(rooms_data)
+    except ObjectNotFoundException as ex:
+        raise HTTPException(status_code=404, detail=str(ex.detail))
+    except ObjectAlreadyExistsException:
+        raise HTTPException(status_code=409, detail="One or more rooms already exist")
+    except DatabaseException:
+        raise HTTPException(status_code=503, detail="Service temporarily unavailable")
+    return {"status": "OK", "created": count}

@@ -1,9 +1,15 @@
 from fastapi.exceptions import HTTPException  # noqa: F401
 from fastapi import APIRouter, Body
-from src.schemas.bookings import BookingAddRequest, BookingAdd, BookingBulkRequest
+from src.schemas.bookings import BookingAddRequest, BookingBulkRequest
 from src.api.dependencies import DBDep, UserDep
 from fastapi.responses import HTMLResponse
-from src.exeptions import ObjectNotFoundException, AllRoomsAreBookedException
+from src.exeptions import (
+    ObjectNotFoundException,
+    AllRoomsAreBookedException,
+    ObjectAlreadyExistsException,
+    DatabaseException,
+)
+from src.services.bookings import BookingService
 from loguru import logger
 
 
@@ -12,12 +18,18 @@ router = APIRouter(prefix="/bookings", tags=["Bookings"])
 
 @router.get("/")
 async def get_bookings(db: DBDep):
-    return await db.bookings.get_all()
+    try:
+        return await BookingService(db).get_all_bookings()
+    except DatabaseException:
+        raise HTTPException(status_code=503, detail="Service temporarily unavailable")
 
 
 @router.get("/me")
 async def get_my_booking(db: DBDep, user_id: UserDep):
-    return await db.bookings.get_filtered(user_id=user_id)
+    try:
+        return await BookingService(db).get_my_bookings(user_id)
+    except DatabaseException:
+        raise HTTPException(status_code=503, detail="Service temporarily unavailable")
 
 
 @router.post("")
@@ -46,38 +58,32 @@ async def create_booking(
     ),
 ):
     try:
-        booking = await db.bookings.create_booking(booking_data, user_id, db)
+        booking = await BookingService(db).create_booking(booking_data, user_id)
     except ObjectNotFoundException:
         logger.warning("Room not found: room_id={}", booking_data.room_id)
         raise HTTPException(status_code=400, detail="Room not found")
     except AllRoomsAreBookedException:
-        logger.warning("All rooms booked: room_id={}, dates={}-{}", booking_data.room_id, booking_data.check_in_date, booking_data.check_out_date)
+        logger.warning(
+            "All rooms booked: room_id={}, dates={}-{}",
+            booking_data.room_id,
+            booking_data.check_in_date,
+            booking_data.check_out_date,
+        )
         raise HTTPException(status_code=409, detail="All rooms are booked")
-    await db.commit()
-    logger.info("Booking created: {}", booking)
+    except DatabaseException:
+        raise HTTPException(status_code=503, detail="Service temporarily unavailable")
     return {"status": "OK", "data": booking}
 
 
 @router.post("/bulk")
 async def create_bookings_bulk(db: DBDep, bookings_data: list[BookingBulkRequest]):
-    valid_user_ids = {u.id for u in await db.users.get_all()}
-    valid_hotel_ids = {h.id for h in await db.hotels.get_filtered()}
-    valid_room_ids = {r.id for r in await db.rooms.get_all()}
-
-    valid = [
-        BookingAdd(**b.model_dump())
-        for b in bookings_data
-        if b.user_id in valid_user_ids
-        and b.hotel_id in valid_hotel_ids
-        and b.room_id in valid_room_ids
-    ]
-
-    if valid:
-        await db.bookings.add_bulk(valid)
-        await db.commit()
-
-    logger.info("Bulk bookings: inserted={}, skipped={}", len(valid), len(bookings_data) - len(valid))
-    return {"inserted": len(valid), "skipped": len(bookings_data) - len(valid)}
+    try:
+        result = await BookingService(db).create_bookings_bulk(bookings_data)
+    except ObjectAlreadyExistsException:
+        raise HTTPException(status_code=409, detail="One or more bookings already exist")
+    except DatabaseException:
+        raise HTTPException(status_code=503, detail="Service temporarily unavailable")
+    return result
 
 
 @router.get("/timeline", response_class=HTMLResponse)
@@ -86,7 +92,10 @@ async def bookings_timeline(db: DBDep):
     Visual timeline of all bookings.
     Open in browser: http://localhost:8000/bookings/timeline
     """
-    bookings = await db.bookings.get_all()
+    try:
+        bookings = await BookingService(db).get_bookings_timeline()
+    except DatabaseException:
+        raise HTTPException(status_code=503, detail="Service temporarily unavailable")
 
     items_js = ",".join(
         [

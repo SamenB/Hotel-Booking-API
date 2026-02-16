@@ -6,6 +6,7 @@ from src.services.auth import AuthService
 from fastapi import HTTPException
 from src.utils.db_manager import DBManager
 from src.database import new_session
+from src.exeptions import TokenExpiredException, InvalidTokenException
 
 
 class PaginationParams(BaseModel):
@@ -26,7 +27,12 @@ def get_token(request: Request):
 
 
 def get_current_user_id(token: str = Depends(get_token)):
-    data = AuthService().decode_access_token(token)
+    try:
+        data = AuthService().decode_access_token(token)
+    except TokenExpiredException:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except InvalidTokenException:
+        raise HTTPException(status_code=401, detail="Invalid token")
     return data["user_id"]
 
 
