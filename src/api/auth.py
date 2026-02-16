@@ -1,4 +1,3 @@
-from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException, Response, status
 from fastapi import APIRouter
 
@@ -6,7 +5,7 @@ from src.schemas.users import UserRequestAdd, UserAdd, UserLogin
 from src.services.auth import AuthService
 from src.api.dependencies import UserDep
 from src.api.dependencies import DBDep
-
+from src.exeptions import ObjectAlreadyExistsException
 
 router = APIRouter(prefix="/auth", tags=["authorization and authentication"])
 
@@ -21,7 +20,7 @@ async def register_user(db: DBDep, user_data: UserRequestAdd):
     try:
         await db.users.add(new_user)
         await db.commit()
-    except IntegrityError:
+    except ObjectAlreadyExistsException:
         await db.rollback()
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -46,7 +45,7 @@ async def register_users_bulk(db: DBDep, users_data: list[UserRequestAdd]):
     try:
         await db.users.add_bulk(users_to_add)
         await db.commit()
-    except IntegrityError:
+    except ObjectAlreadyExistsException:
         await db.rollback()
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,

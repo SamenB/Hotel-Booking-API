@@ -3,6 +3,7 @@ from fastapi import APIRouter, Body
 from src.schemas.bookings import BookingAddRequest, BookingAdd, BookingBulkRequest
 from src.api.dependencies import DBDep, UserDep
 from fastapi.responses import HTMLResponse
+from src.exeptions import ObjectNotFoundException, AllRoomsAreBookedException
 
 
 router = APIRouter(prefix="/bookings", tags=["Bookings"])
@@ -43,11 +44,12 @@ async def create_booking(
         }
     ),
 ):
-    booking, error = await db.bookings.create_booking(booking_data, user_id, db)
-    if error == "Room not found":
-        raise HTTPException(status_code=404, detail=error)
-    if error:
-        raise HTTPException(status_code=409, detail=error)
+    try:
+        booking = await db.bookings.create_booking(booking_data, user_id, db)
+    except ObjectNotFoundException:
+        raise HTTPException(status_code=400, detail="Room not found")
+    except AllRoomsAreBookedException:
+        raise HTTPException(status_code=409, detail="All rooms are booked")
     await db.commit()
     return {"status": "OK", "data": booking}
 

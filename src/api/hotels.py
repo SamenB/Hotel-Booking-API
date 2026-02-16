@@ -14,11 +14,11 @@ router = APIRouter(prefix="/hotels", tags=["Hotels"])
 
 @router.get("/{hotel_id}")
 async def get_hotel_by_id(hotel_id: int, db: DBDep):
-    hotel = await db.hotels.get_one_or_none(id=hotel_id)
-    if not hotel:
+    try:
+        hotel = await db.hotels.get_one(id=hotel_id)
+    except ObjectNotFoundException:
         raise HTTPException(status_code=404, detail="Hotel not found")
     return hotel
-
 
 @router.get("")
 async def get_hotels(
@@ -30,6 +30,8 @@ async def get_hotels(
     title: str | None = Query(None, description="Hotel title"),
     location: str | None = Query(None, description="Hotel location"),
 ):
+    if date_from >= date_to:
+        raise HTTPException(status_code=422, detail="date_to must be after date_from")
     per_page = pagination.per_page or 10
     offset = (pagination.page - 1) * per_page
     hotels = await db.hotels.get_filtered_by_time(
